@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { Outlet, NavLink, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard, FilePlus2, ShieldCheck, GitBranch, BarChart3,
-  Settings, Menu, Copy, Check, Layers, WifiOff, Wifi
+  Settings, Menu, Copy, Check, WifiOff
 } from 'lucide-react'
 import WalletButton from './WalletButton.jsx'
 import { checkHealth } from '../api/client.js'
@@ -65,10 +65,8 @@ export default function Layout() {
   const sidebar = (
     <aside className="flex flex-col h-full bg-[#0d1117] border-r border-white/[0.06] w-[220px] flex-shrink-0">
       {/* Logo */}
-      <div className="flex items-center gap-2 px-5 py-5 border-b border-white/[0.06]">
-        <div className="w-8 h-8 rounded-lg bg-brand-green/20 flex items-center justify-center">
-          <Layers size={16} className="text-brand-green" />
-        </div>
+      <div className="flex items-center gap-2.5 px-5 py-4 border-b border-white/[0.06]">
+        <img src="/logo.svg" alt="ProofLayer" className="w-8 h-8 flex-shrink-0" />
         <span className="text-[15px] font-bold text-brand-green tracking-wide">ProofLayer</span>
       </div>
 
