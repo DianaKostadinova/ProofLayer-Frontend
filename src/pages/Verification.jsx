@@ -3,10 +3,18 @@ import { useNavigate } from 'react-router-dom'
 import { ShieldCheck, Camera, Upload, Loader2, Info } from 'lucide-react'
 import UploadBox from '../components/UploadBox.jsx'
 import CameraCapture from '../components/CameraCapture.jsx'
-import { uploadMedia, getErrorMessage } from '../api/client.js'
+import { getErrorMessage } from '../api/client.js'
 
 function genJobId() {
   return `JOB-${Math.floor(Math.random() * 900 + 100)}-${['VX', 'AX', 'TX'][Math.floor(Math.random() * 3)]}`
+}
+
+async function computeSha256(file) {
+  const buf = await file.arrayBuffer()
+  const hashBuf = await crypto.subtle.digest('SHA-256', buf)
+  return Array.from(new Uint8Array(hashBuf))
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('')
 }
 
 export default function Verification() {
@@ -22,10 +30,10 @@ export default function Verification() {
     setError('')
     const jobId = genJobId()
     try {
-      const uploadResult = await uploadMedia(file)
-      navigate(`/verification/process/${jobId}`, { state: { file, uploadResult } })
+      const localHash = await computeSha256(file)
+      navigate(`/verification/process/${jobId}`, { state: { file, localHash } })
     } catch (e) {
-      setError(getErrorMessage(e))
+      setError(getErrorMessage(e) || 'Failed to read file')
     } finally {
       setLoading(false)
     }

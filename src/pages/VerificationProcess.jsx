@@ -49,7 +49,7 @@ export default function VerificationProcess() {
   const { jobId } = useParams()
   const navigate = useNavigate()
   const location = useLocation()
-  const { file, uploadResult } = location.state || {}
+  const { file, localHash } = location.state || {}
 
   const [stepStatus, setStepStatus] = useState(['pending', 'pending', 'pending', 'pending'])
   const [verifyResult, setVerifyResult] = useState(null)
@@ -117,7 +117,7 @@ export default function VerificationProcess() {
     return () => timers.forEach(clearTimeout)
   }, [verifyResult])
 
-  const hash = uploadResult?.hash || 'demo'
+  const hash = verifyResult?.hash || localHash || 'demo'
   const lipsyncVal = verifyResult ? Math.round(verifyResult.deepfake_probability * 100) : 98
   const frameVal = verifyResult ? Math.round(verifyResult.deepfake_probability * 91) : 86
   const audioVal = verifyResult ? Math.round(verifyResult.deepfake_probability * 75) : 72
@@ -125,12 +125,16 @@ export default function VerificationProcess() {
   const stepCards = [
     {
       title: 'File Ingestion & Hashing',
-      detail: `SHA-256 hash generated: ${uploadResult?.hash?.slice(0, 50) || 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca'}...`,
+      detail: `SHA-256: ${(verifyResult?.hash || localHash)?.slice(0, 50) || 'Computing...'}...`,
       timing: '0.4s',
     },
     {
       title: 'Solana Ledger Query',
-      detail: `Queried ProofLayer smart contract. Match found for author: ${verifyResult?.registered_owner || '@OfficialNews'}`,
+      detail: verifyResult?.registered_owner
+        ? `Registered owner: ${verifyResult.registered_owner}`
+        : verifyResult
+          ? 'No on-chain registration found for this hash.'
+          : 'Querying ProofLayer smart contract...',
       timing: '1.2s',
       extra: (
         <div className="mt-2 bg-dark-800 rounded-lg p-2 space-y-1">
