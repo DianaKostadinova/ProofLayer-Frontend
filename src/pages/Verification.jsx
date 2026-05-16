@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { ShieldCheck, Camera, Upload, Loader2, Info } from 'lucide-react'
 import UploadBox from '../components/UploadBox.jsx'
 import CameraCapture from '../components/CameraCapture.jsx'
-import { uploadMedia } from '../api/client.js'
+import { uploadMedia, getErrorMessage } from '../api/client.js'
 
 function genJobId() {
   return `JOB-${Math.floor(Math.random() * 900 + 100)}-${['VX', 'AX', 'TX'][Math.floor(Math.random() * 3)]}`
@@ -24,20 +24,8 @@ export default function Verification() {
     try {
       const uploadResult = await uploadMedia(file)
       navigate(`/verification/process/${jobId}`, { state: { file, uploadResult } })
-    } catch {
-      // Demo fallback
-      navigate(`/verification/process/${jobId}`, {
-        state: {
-          file,
-          uploadResult: {
-            hash: 'a1b...7f2x_' + Date.now(),
-            cid: 'QmDemo...',
-            phash: 'f1f2f3f4f5f6f7f8',
-            filename: file.name,
-            size_bytes: file.size,
-          },
-        },
-      })
+    } catch (e) {
+      setError(getErrorMessage(e))
     } finally {
       setLoading(false)
     }

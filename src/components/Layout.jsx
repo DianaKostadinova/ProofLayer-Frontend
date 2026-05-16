@@ -1,10 +1,11 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Outlet, NavLink, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard, FilePlus2, ShieldCheck, GitBranch, BarChart3,
-  Settings, Menu, X, Copy, Check, Layers, ChevronRight
+  Settings, Menu, Copy, Check, Layers, WifiOff, Wifi
 } from 'lucide-react'
 import WalletButton from './WalletButton.jsx'
+import { checkHealth } from '../api/client.js'
 
 const NAV_ITEMS = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard, exact: true },
@@ -36,7 +37,22 @@ const WALLET_ADDR = '0x4d...f291'
 export default function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [backendStatus, setBackendStatus] = useState('checking') // 'checking' | 'online' | 'offline'
   const location = useLocation()
+
+  useEffect(() => {
+    async function ping() {
+      try {
+        await checkHealth()
+        setBackendStatus('online')
+      } catch {
+        setBackendStatus('offline')
+      }
+    }
+    ping()
+    const interval = setInterval(ping, 15000)
+    return () => clearInterval(interval)
+  }, [])
 
   const pageTitle = getPageTitle(location.pathname)
 
@@ -145,6 +161,17 @@ export default function Layout() {
             <span className="w-1.5 h-1.5 rounded-full bg-brand-green animate-pulse-slow flex-shrink-0" />
             <span className="hidden sm:inline">Mainnet Beta</span>
           </span>
+
+          {/* Backend status */}
+          {backendStatus === 'offline' && (
+            <span className="badge-danger flex-shrink-0 hidden sm:inline-flex">
+              <WifiOff size={10} />
+              API Offline
+            </span>
+          )}
+          {backendStatus === 'offline' && (
+            <WifiOff size={14} className="text-brand-red sm:hidden flex-shrink-0" />
+          )}
 
           <WalletButton compact />
         </header>

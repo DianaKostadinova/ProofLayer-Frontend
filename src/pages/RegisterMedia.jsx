@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { Camera, Upload, Wallet, Link2, CheckCircle2, ArrowRight, Copy, ExternalLink, Loader2 } from 'lucide-react'
 import UploadBox from '../components/UploadBox.jsx'
 import CameraCapture from '../components/CameraCapture.jsx'
-import { uploadMedia, registerMedia } from '../api/client.js'
+import { uploadMedia, registerMedia, getErrorMessage } from '../api/client.js'
 
 const STEPS = ['Select Media', 'Connect Wallet', 'Register On-Chain', 'Confirmation']
 
@@ -26,15 +26,7 @@ export default function RegisterMedia() {
       setUploadResult(result)
       setStep(1)
     } catch (e) {
-      // Demo mode fallback
-      setUploadResult({
-        hash: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
-        cid: 'QmXoypizjW3WknFiJnKLwHCnL72vedxjQkDDP1mXWo6uco',
-        phash: 'f8f8f8f8f8f8f8f8',
-        filename: file.name,
-        size_bytes: file.size,
-      })
-      setStep(1)
+      setError(getErrorMessage(e))
     } finally {
       setLoading(false)
     }
@@ -55,16 +47,7 @@ export default function RegisterMedia() {
       setRegResult(result)
       setStep(3)
     } catch (e) {
-      // Demo mode
-      setRegResult({
-        tx_signature: 'MOCK_5Kyq9...txDemo',
-        hash: uploadResult.hash,
-        cid: uploadResult.cid,
-        wallet_address: walletAddr,
-        timestamp: new Date().toISOString(),
-        on_chain: false,
-      })
-      setStep(3)
+      setError(getErrorMessage(e))
     } finally {
       setLoading(false)
     }

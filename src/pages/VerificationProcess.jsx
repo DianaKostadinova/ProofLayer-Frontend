@@ -4,7 +4,7 @@ import {
   CheckCircle2, XCircle, Loader2, Clock, BarChart2,
   AlertTriangle, FileText, ChevronRight, X
 } from 'lucide-react'
-import { verifyMedia } from '../api/client.js'
+import { verifyMedia, getErrorMessage } from '../api/client.js'
 
 const STEP_DELAYS = [600, 1800, 3000, 4500]
 
@@ -56,6 +56,7 @@ export default function VerificationProcess() {
   const [modelStates, setModelStates] = useState(['queued', 'queued', 'queued'])
   const [done, setDone] = useState(false)
   const [elapsed, setElapsed] = useState(0)
+  const [apiError, setApiError] = useState('')
   const timerRef = useRef(null)
   const startRef = useRef(Date.now())
 
@@ -71,17 +72,8 @@ export default function VerificationProcess() {
     if (!file) return
     verifyMedia(file)
       .then(r => setVerifyResult(r))
-      .catch(() => {
-        // Demo result
-        setVerifyResult({
-          hash: uploadResult?.hash || 'demo',
-          similarity: 89,
-          deepfake_probability: 0.942,
-          status: 'Likely Manipulated',
-          registered_owner: '@OfficialNews',
-          registered_at: '2023-10-24T14:32:00Z',
-          ipfs_cid: uploadResult?.cid || 'QmDemo...',
-        })
+      .catch((e) => {
+        setApiError(getErrorMessage(e))
       })
   }, [])
 
@@ -227,6 +219,17 @@ export default function VerificationProcess() {
           </div>
         ))}
       </div>
+
+      {/* API error banner */}
+      {apiError && (
+        <div className="flex items-start gap-2 bg-brand-red/10 border border-brand-red/25 rounded-xl px-4 py-3 animate-fade-in">
+          <AlertTriangle size={14} className="text-brand-red flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="text-xs font-semibold text-brand-red">Backend Error</p>
+            <p className="text-xs text-slate-400 mt-0.5">{apiError}</p>
+          </div>
+        </div>
+      )}
 
       {/* Action Buttons */}
       <div className="flex gap-2 pt-2">
