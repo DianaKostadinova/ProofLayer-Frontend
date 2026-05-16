@@ -117,31 +117,33 @@ export default function Layout() {
       {/* Main Area */}
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
         {/* TopBar */}
-        <header className="flex items-center gap-3 px-4 py-3 bg-[#0d1117] border-b border-white/[0.06] flex-shrink-0">
+        <header className="flex items-center gap-2 px-3 py-2.5 bg-[#0d1117] border-b border-white/[0.06] flex-shrink-0 min-w-0">
+          {/* Hamburger — mobile only */}
           <button
-            className="md:hidden flex items-center justify-center w-8 h-8 rounded-lg hover:bg-white/05 text-slate-400 hover:text-white transition-colors"
+            className="md:hidden flex items-center justify-center w-8 h-8 rounded-lg hover:bg-white/5 text-slate-400 hover:text-white transition-colors flex-shrink-0"
             onClick={() => setSidebarOpen(true)}
           >
             <Menu size={18} />
           </button>
 
+          {/* Page title */}
           <div className="flex-1 min-w-0">
             <h1 className="text-sm font-semibold text-white truncate">{pageTitle}</h1>
           </div>
 
-          {/* ID Badge */}
+          {/* ID badge — sm+ only */}
           <button
             onClick={copyId}
-            className="hidden sm:flex items-center gap-1.5 text-[11px] font-mono text-slate-500 hover:text-slate-300 transition-colors"
+            className="hidden sm:flex items-center gap-1.5 text-[11px] font-mono text-slate-500 hover:text-slate-300 transition-colors flex-shrink-0"
           >
             ID: {SESSION_ID}
             {copied ? <Check size={11} className="text-brand-green" /> : <Copy size={11} />}
           </button>
 
-          {/* Network Badge */}
-          <span className="badge-network hidden sm:inline-flex">
-            <span className="w-1.5 h-1.5 rounded-full bg-brand-green animate-pulse-slow" />
-            Mainnet Beta
+          {/* Network badge — full on sm+, dot-only on mobile */}
+          <span className="badge-network flex-shrink-0">
+            <span className="w-1.5 h-1.5 rounded-full bg-brand-green animate-pulse-slow flex-shrink-0" />
+            <span className="hidden sm:inline">Mainnet Beta</span>
           </span>
 
           <WalletButton compact />

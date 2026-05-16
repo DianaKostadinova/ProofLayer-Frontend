@@ -190,11 +190,12 @@
     color: #10b981;
     font-size: 12px;
     font-weight: 600;
-    padding: 4px 10px;
+    padding: 4px 8px;
     border-radius: 20px;
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    gap: 5px;
+    white-space: nowrap;
   }
 
   .badge-warning {
