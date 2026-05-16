@@ -1,8 +1,16 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import { nodePolyfills } from 'vite-plugin-node-polyfills'
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    // Required for @solana/web3.js: polyfills Buffer, process, crypto, etc.
+    nodePolyfills({
+      globals: { Buffer: true, process: true },
+      protocolImports: true,
+    }),
+  ],
   server: {
     port: 3000,
     proxy: {

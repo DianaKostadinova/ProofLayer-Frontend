@@ -18,7 +18,11 @@ api.interceptors.response.use(
   },
   (err) => {
     const status = err.response?.status
-    const detail = err.response?.data?.detail || err.message
+    const raw = err.response?.data?.detail
+    // Pydantic 422 detail is an array of objects — log them readably
+    const detail = Array.isArray(raw)
+      ? raw.map(d => `${d.loc?.join('.')}: ${d.msg}`).join(' | ')
+      : raw || err.message
     console.error(`[API] ✗ ${status || 'Network Error'} ${err.config?.url} — ${detail}`)
     return Promise.reject(err)
   }
@@ -38,6 +42,8 @@ export async function uploadMedia(file) {
   return data
 }
 
+// payload: { hash, cid, phash, wallet_address, signature }
+// signature is the Solana tx signature from Phantom (or MOCK_ in dev mode)
 export async function registerMedia(payload) {
   const { data } = await api.post('/register', payload)
   return data

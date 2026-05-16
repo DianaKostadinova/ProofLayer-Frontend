@@ -1,53 +1,28 @@
 import React, { useState } from 'react'
+import { useWallet } from '@solana/wallet-adapter-react'
+import { useWalletModal } from '@solana/wallet-adapter-react-ui'
 import { Wallet, LogOut, ChevronDown } from 'lucide-react'
 
 export default function WalletButton({ compact = false }) {
-  const [connected, setConnected] = useState(false)
-  const [address, setAddress] = useState('')
-  const [connecting, setConnecting] = useState(false)
+  const { connected, publicKey, disconnect } = useWallet()
+  const { setVisible } = useWalletModal()
   const [open, setOpen] = useState(false)
 
-  async function connect() {
-    setConnecting(true)
-    try {
-      if (window.solana && window.solana.isPhantom) {
-        const resp = await window.solana.connect()
-        const addr = resp.publicKey.toString()
-        setAddress(addr)
-        setConnected(true)
-      } else {
-        // Demo mode: simulate connected wallet
-        setAddress('0x4d...f291')
-        setConnected(true)
-      }
-    } catch {
-      // User rejected
-    } finally {
-      setConnecting(false)
-    }
-  }
-
-  function disconnect() {
-    setConnected(false)
-    setAddress('')
-    setOpen(false)
-    if (window.solana) window.solana.disconnect().catch(() => {})
-  }
+  const address = publicKey?.toString() ?? ''
 
   function truncate(addr) {
-    if (!addr) return ''
-    return addr.length > 10 ? `${addr.slice(0, 4)}...${addr.slice(-4)}` : addr
+    if (!addr || addr.length <= 10) return addr
+    return `${addr.slice(0, 4)}...${addr.slice(-4)}`
   }
 
   if (!connected) {
     return (
       <button
-        onClick={connect}
-        disabled={connecting}
+        onClick={() => setVisible(true)}
         className="flex items-center gap-2 bg-brand-green/10 border border-brand-green/30 text-brand-green hover:bg-brand-green/20 transition-all rounded-lg px-3 py-1.5 text-xs font-semibold"
       >
         <Wallet size={13} />
-        {connecting ? 'Connecting...' : compact ? 'Connect' : 'Connect Wallet'}
+        {compact ? 'Connect' : 'Connect Wallet'}
       </button>
     )
   }
@@ -65,7 +40,7 @@ export default function WalletButton({ compact = false }) {
       {open && (
         <div className="absolute right-0 top-full mt-1 w-40 card p-1 z-50 animate-fade-in">
           <button
-            onClick={disconnect}
+            onClick={() => { disconnect(); setOpen(false) }}
             className="w-full flex items-center gap-2 px-3 py-2 text-xs text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
           >
             <LogOut size={13} />

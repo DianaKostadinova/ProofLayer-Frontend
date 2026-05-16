@@ -1,12 +1,20 @@
 import React, { useState } from 'react'
-import { Camera, Upload, Wallet, Link2, CheckCircle2, ArrowRight, Copy, ExternalLink, Loader2 } from 'lucide-react'
+import { Camera, Upload, Wallet, Link2, CheckCircle2, Copy, ExternalLink, Loader2 } from 'lucide-react'
+import { useWallet } from '@solana/wallet-adapter-react'
+import { useWalletModal } from '@solana/wallet-adapter-react-ui'
+import { useConnection } from '@solana/wallet-adapter-react'
 import UploadBox from '../components/UploadBox.jsx'
 import CameraCapture from '../components/CameraCapture.jsx'
 import { uploadMedia, registerMedia, getErrorMessage } from '../api/client.js'
+import { createRegisterMediaTx } from '../anchor/program.js'
 
 const STEPS = ['Select Media', 'Connect Wallet', 'Register On-Chain', 'Confirmation']
 
 export default function RegisterMedia() {
+  const { publicKey, sendTransaction, connected } = useWallet()
+  const { setVisible } = useWalletModal()
+  const { connection } = useConnection()
+
   const [step, setStep] = useState(0)
   const [file, setFile] = useState(null)
   const [showCamera, setShowCamera] = useState(false)
@@ -14,7 +22,6 @@ export default function RegisterMedia() {
   const [regResult, setRegResult] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [walletAddr] = useState('DEMO_WALLET_0x4d...f291')
   const [copied, setCopied] = useState(false)
 
   async function handleUpload() {
@@ -32,22 +39,53 @@ export default function RegisterMedia() {
     }
   }
 
+  const MOCK_MODE = import.meta.env.VITE_SOLANA_MOCK === 'true'
+
   async function handleRegister() {
     if (!uploadResult) return
+    if (!MOCK_MODE && !publicKey) return
     setLoading(true)
     setError('')
     try {
+      let signature
+      let walletAddr
+
+      if (MOCK_MODE) {
+        // Dev mode: skip Phantom entirely — backend also runs in mock mode
+        signature = `MOCK_${uploadResult.hash.slice(0, 16)}_${Date.now()}`
+        walletAddr = publicKey?.toString() ?? 'MOCK_WALLET'
+      } else {
+        // Production: build the Anchor tx and have Phantom sign + broadcast it
+        const { tx, blockhash, lastValidBlockHeight } = await createRegisterMediaTx(
+          connection,
+          publicKey,
+          uploadResult.hash,
+          uploadResult.cid,
+        )
+        signature = await sendTransaction(tx, connection, {
+          skipPreflight: false,
+          preflightCommitment: 'confirmed',
+        })
+        await connection.confirmTransaction(
+          { signature, blockhash, lastValidBlockHeight },
+          'confirmed',
+        )
+        walletAddr = publicKey.toString()
+      }
+
+      // Record in the backend DB
       const result = await registerMedia({
         hash: uploadResult.hash,
         cid: uploadResult.cid,
         phash: uploadResult.phash,
         wallet_address: walletAddr,
-        signature: 'DEMO_SIG_' + Date.now(),
+        signature: signature,
       })
+
       setRegResult(result)
       setStep(3)
     } catch (e) {
-      setError(getErrorMessage(e))
+      setError(e?.message ?? getErrorMessage(e))
     } finally {
       setLoading(false)
     }
@@ -88,7 +126,6 @@ export default function RegisterMedia() {
             <p className="text-sm text-slate-400 mt-0.5">Upload a file or take a photo to anchor its provenance on Solana.</p>
           </div>
 
-          {/* Camera / Upload toggle */}
           <div className="flex gap-2">
             <button
               onClick={() => setShowCamera(true)}
@@ -111,7 +148,6 @@ export default function RegisterMedia() {
             label="Or drag & drop your media here"
           />
 
-          {/* Hidden native file input for mobile capture */}
           <input
             id="reg-file-input"
             type="file"
@@ -139,10 +175,9 @@ export default function RegisterMedia() {
         <div className="card p-5 space-y-4 animate-fade-in">
           <div>
             <h2 className="text-base font-semibold text-white">Review & Connect Wallet</h2>
-            <p className="text-sm text-slate-400 mt-0.5">Your media has been hashed. Connect your Phantom wallet to sign the provenance record.</p>
+            <p className="text-sm text-slate-400 mt-0.5">Your media has been hashed. Connect your Phantom wallet to sign the provenance transaction.</p>
           </div>
 
-          {/* Hash display */}
           <div className="card-elevated p-3 space-y-2 rounded-lg">
             <div className="flex justify-between items-center">
               <span className="text-xs text-slate-500">SHA-256</span>
@@ -163,10 +198,17 @@ export default function RegisterMedia() {
 
           <div className="flex gap-2">
             <button onClick={() => setStep(0)} className="btn-ghost text-sm flex-1 justify-center">Back</button>
-            <button onClick={() => setStep(2)} className="btn-primary text-sm flex-1 justify-center">
-              <Wallet size={14} />
-              Wallet Connected (Demo)
-            </button>
+            {connected ? (
+              <button onClick={() => setStep(2)} className="btn-primary text-sm flex-1 justify-center">
+                <Wallet size={14} />
+                {publicKey?.toString().slice(0, 4)}...{publicKey?.toString().slice(-4)} — Continue
+              </button>
+            ) : (
+              <button onClick={() => setVisible(true)} className="btn-primary text-sm flex-1 justify-center">
+                <Wallet size={14} />
+                Connect Wallet
+              </button>
+            )}
           </div>
         </div>
       )}
@@ -176,17 +218,17 @@ export default function RegisterMedia() {
         <div className="card p-5 space-y-4 animate-fade-in">
           <div>
             <h2 className="text-base font-semibold text-white">Register On-Chain</h2>
-            <p className="text-sm text-slate-400 mt-0.5">This will broadcast a Solana transaction storing your media's hash, IPFS CID, and your wallet address as permanent provenance proof.</p>
+            <p className="text-sm text-slate-400 mt-0.5">This will broadcast a Solana transaction storing your media's hash, IPFS CID, and wallet address as permanent provenance proof.</p>
           </div>
 
           <div className="card-elevated p-3 rounded-lg space-y-2">
             <div className="flex justify-between text-xs">
               <span className="text-slate-500">Wallet</span>
-              <span className="font-mono text-slate-300">{walletAddr}</span>
+              <span className="font-mono text-slate-300 truncate max-w-[200px]">{publicKey?.toString()}</span>
             </div>
             <div className="flex justify-between text-xs">
               <span className="text-slate-500">Network</span>
-              <span className="text-brand-green font-semibold">Mainnet Beta</span>
+              <span className="text-brand-green font-semibold">Devnet</span>
             </div>
             <div className="flex justify-between text-xs">
               <span className="text-slate-500">Estimated Fee</span>
@@ -198,7 +240,7 @@ export default function RegisterMedia() {
 
           <div className="flex gap-2">
             <button onClick={() => setStep(1)} className="btn-ghost text-sm flex-1 justify-center">Back</button>
-            <button onClick={handleRegister} disabled={loading} className="btn-primary text-sm flex-1 justify-center">
+            <button onClick={handleRegister} disabled={loading || (!MOCK_MODE && !connected)} className="btn-primary text-sm flex-1 justify-center">
               {loading ? <Loader2 size={14} className="animate-spin-custom" /> : <Link2 size={14} />}
               {loading ? 'Broadcasting...' : 'Sign & Register'}
             </button>
@@ -215,7 +257,9 @@ export default function RegisterMedia() {
             </div>
             <h2 className="text-lg font-bold text-white">Media Registered!</h2>
             <p className="text-sm text-slate-400 mt-1">
-              {regResult.on_chain ? 'Your provenance record is now permanently stored on Solana.' : 'Provenance record saved (demo mode — not on-chain).'}
+              {regResult.on_chain
+                ? 'Your provenance record is now permanently stored on Solana.'
+                : 'Provenance record saved (dev mode — not on-chain).'}
             </p>
           </div>
 
@@ -237,32 +281,36 @@ export default function RegisterMedia() {
             <div className="flex justify-between text-xs">
               <span className="text-slate-500">Status</span>
               <span className={regResult.on_chain ? 'text-brand-green font-semibold' : 'text-brand-amber font-semibold'}>
-                {regResult.on_chain ? 'On-Chain ✓' : 'Demo Mode'}
+                {regResult.on_chain ? 'On-Chain ✓' : 'Dev Mode'}
               </span>
             </div>
           </div>
 
           <div className="flex gap-2">
-            <button onClick={() => { setStep(0); setFile(null); setUploadResult(null); setRegResult(null) }} className="btn-ghost text-sm flex-1 justify-center">
+            <button
+              onClick={() => { setStep(0); setFile(null); setUploadResult(null); setRegResult(null) }}
+              className="btn-ghost text-sm flex-1 justify-center"
+            >
               Register Another
             </button>
-            <a
-              href={`https://explorer.solana.com/tx/${regResult.tx_signature}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn-primary text-sm flex-1 justify-center"
-            >
-              <ExternalLink size={14} />
-              View on Explorer
-            </a>
+            {regResult.on_chain && (
+              <a
+                href={`https://explorer.solana.com/tx/${regResult.tx_signature}?cluster=devnet`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn-primary text-sm flex-1 justify-center"
+              >
+                <ExternalLink size={14} />
+                View on Explorer
+              </a>
+            )}
           </div>
         </div>
       )}
 
-      {/* Camera Modal */}
       {showCamera && (
         <CameraCapture
-          onCapture={(f) => { setFile(f); setShowCamera(false) }}
+          onCapture={f => { setFile(f); setShowCamera(false) }}
           onClose={() => setShowCamera(false)}
         />
       )}
