@@ -56,30 +56,30 @@ export default function TrustScores() {
       </div>
 
       {/* Summary cards */}
-      <div className="grid grid-cols-3 gap-3">
-        <div className="card p-4">
-          <div className="flex items-center gap-2 mb-1">
-            <BarChart3 size={13} className="text-brand-cyan" />
-            <span className="text-xs text-slate-500">Network Avg</span>
+      <div className="grid grid-cols-3 gap-2 sm:gap-3">
+        <div className="card p-3 sm:p-4">
+          <div className="flex items-center gap-1.5 mb-1">
+            <BarChart3 size={12} className="text-brand-cyan flex-shrink-0" />
+            <span className="text-[11px] sm:text-xs text-slate-500 truncate">Avg Score</span>
           </div>
-          <p className="text-2xl font-bold text-white">{avg}</p>
-          <p className="text-xs text-brand-green mt-0.5">+1.4 this month</p>
+          <p className="text-xl sm:text-2xl font-bold text-white">{avg}</p>
+          <p className="text-[11px] sm:text-xs text-brand-green mt-0.5">+1.4 <span className="hidden sm:inline">this month</span></p>
         </div>
-        <div className="card p-4">
-          <div className="flex items-center gap-2 mb-1">
-            <Award size={13} className="text-brand-green" />
-            <span className="text-xs text-slate-500">Trusted Sources</span>
+        <div className="card p-3 sm:p-4">
+          <div className="flex items-center gap-1.5 mb-1">
+            <Award size={12} className="text-brand-green flex-shrink-0" />
+            <span className="text-[11px] sm:text-xs text-slate-500 truncate"><span className="hidden sm:inline">Trusted </span>Sources</span>
           </div>
-          <p className="text-2xl font-bold text-white">{elite}</p>
-          <p className="text-xs text-slate-500 mt-0.5">of {SOURCES.length} tracked</p>
+          <p className="text-xl sm:text-2xl font-bold text-white">{elite}</p>
+          <p className="text-[11px] sm:text-xs text-slate-500 mt-0.5">of {SOURCES.length}</p>
         </div>
-        <div className="card p-4">
-          <div className="flex items-center gap-2 mb-1">
-            <AlertTriangle size={13} className="text-brand-red" />
-            <span className="text-xs text-slate-500">High Risk</span>
+        <div className="card p-3 sm:p-4">
+          <div className="flex items-center gap-1.5 mb-1">
+            <AlertTriangle size={12} className="text-brand-red flex-shrink-0" />
+            <span className="text-[11px] sm:text-xs text-slate-500 truncate">High Risk</span>
           </div>
-          <p className="text-2xl font-bold text-brand-red">{risky}</p>
-          <p className="text-xs text-slate-500 mt-0.5">flagged sources</p>
+          <p className="text-xl sm:text-2xl font-bold text-brand-red">{risky}</p>
+          <p className="text-[11px] sm:text-xs text-slate-500 mt-0.5">flagged</p>
         </div>
       </div>
 
@@ -97,9 +97,9 @@ export default function TrustScores() {
         ))}
       </div>
 
-      {/* Leaderboard */}
-      <div className="card overflow-hidden">
-        <div className="hidden sm:grid grid-cols-12 gap-3 px-4 py-2.5 border-b border-white/[0.06] text-[10px] font-semibold text-slate-600 uppercase tracking-wider">
+      {/* Leaderboard — desktop table */}
+      <div className="card overflow-hidden hidden sm:block">
+        <div className="grid grid-cols-12 gap-3 px-4 py-2.5 border-b border-white/[0.06] text-[10px] font-semibold text-slate-600 uppercase tracking-wider">
           <div className="col-span-1">#</div>
           <div className="col-span-4">Source</div>
           <div className="col-span-2">Uploads</div>
@@ -107,10 +107,9 @@ export default function TrustScores() {
           <div className="col-span-1">Trend</div>
           <div className="col-span-1">Tier</div>
         </div>
-
         <div className="divide-y divide-white/[0.04]">
-          {filtered.map((src, i) => (
-            <div key={src.name} className="grid grid-cols-12 gap-3 px-4 py-3 items-center hover:bg-white/[0.02] transition-colors animate-fade-in">
+          {filtered.map((src) => (
+            <div key={src.name} className="grid grid-cols-12 gap-3 px-4 py-3 items-center hover:bg-white/[0.02] transition-colors">
               <div className="col-span-1">
                 <span className={`text-sm font-bold ${src.rank <= 3 ? 'text-brand-amber' : 'text-slate-600'}`}>{src.rank}</span>
               </div>
@@ -136,6 +135,31 @@ export default function TrustScores() {
             </div>
           ))}
         </div>
+      </div>
+
+      {/* Leaderboard — mobile cards */}
+      <div className="sm:hidden space-y-2">
+        {filtered.map((src) => (
+          <div key={src.name} className="card p-3 animate-fade-in">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <span className={`text-sm font-bold w-5 ${src.rank <= 3 ? 'text-brand-amber' : 'text-slate-600'}`}>{src.rank}</span>
+                <div>
+                  <p className="text-xs font-semibold text-white">{src.name}</p>
+                  <p className="text-[10px] text-slate-600">{src.verified}/{src.handles} verified</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className={`flex items-center gap-0.5 text-[10px] font-bold ${src.trend > 0 ? 'text-brand-green' : src.trend < 0 ? 'text-brand-red' : 'text-slate-500'}`}>
+                  {src.trend > 0 ? <TrendingUp size={10} /> : src.trend < 0 ? <TrendingDown size={10} /> : <Minus size={10} />}
+                  {Math.abs(src.trend)}
+                </span>
+                <Badge label={src.badge} />
+              </div>
+            </div>
+            <ScoreBar value={src.score} />
+          </div>
+        ))}
       </div>
     </div>
   )

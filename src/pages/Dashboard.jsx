@@ -82,16 +82,16 @@ export default function Dashboard() {
       {/* Stats Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {STATS.map(({ label, value, change, up, icon: Icon, color, bg }) => (
-          <div key={label} className="card p-4 space-y-3">
-            <div className="flex items-center justify-between">
-              <p className="text-xs text-slate-500 font-medium">{label}</p>
-              <div className={`w-8 h-8 rounded-lg ${bg} flex items-center justify-center`}>
-                <Icon size={14} className={color} />
+          <div key={label} className="card p-3 sm:p-4 space-y-2 sm:space-y-3">
+            <div className="flex items-start justify-between gap-1">
+              <p className="text-[11px] sm:text-xs text-slate-500 font-medium leading-tight">{label}</p>
+              <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg ${bg} flex items-center justify-center flex-shrink-0`}>
+                <Icon size={13} className={color} />
               </div>
             </div>
             <div>
-              <p className="text-2xl font-bold text-white">{value}</p>
-              <p className={`text-xs mt-0.5 font-medium ${up ? 'text-brand-green' : 'text-brand-red'}`}>{change} this week</p>
+              <p className="text-xl sm:text-2xl font-bold text-white">{value}</p>
+              <p className={`text-[11px] sm:text-xs mt-0.5 font-medium ${up ? 'text-brand-green' : 'text-brand-red'}`}>{change} <span className="hidden sm:inline">this week</span></p>
             </div>
           </div>
         ))}
@@ -113,24 +113,31 @@ export default function Dashboard() {
           {RECENT.map((job) => (
             <div
               key={job.id}
-              className="flex items-center gap-3 px-4 py-3 hover:bg-white/[0.02] cursor-pointer transition-colors"
+              className="flex items-center gap-3 px-3 sm:px-4 py-3 hover:bg-white/[0.02] cursor-pointer transition-colors"
               onClick={() => navigate(`/verification/report/${job.hash}`, { state: { mock: true, ...job } })}
             >
-              <div className="w-8 h-8 rounded-lg bg-dark-600 flex items-center justify-center flex-shrink-0">
-                <Activity size={13} className="text-slate-500" />
+              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-dark-600 flex items-center justify-center flex-shrink-0">
+                <Activity size={12} className="text-slate-500" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm text-white font-medium truncate">{job.file}</p>
-                <div className="flex items-center gap-2 mt-0.5">
+                <p className="text-xs sm:text-sm text-white font-medium truncate">{job.file}</p>
+                <div className="flex items-center gap-1.5 mt-0.5">
                   <span className="text-[10px] font-mono text-slate-600">{job.id}</span>
-                  <span className="text-[10px] text-slate-600">·</span>
-                  <Clock size={10} className="text-slate-600" />
+                  <span className="text-[10px] text-slate-700">·</span>
                   <span className="text-[10px] text-slate-600">{job.time}</span>
                 </div>
               </div>
-              <div className="flex items-center gap-3 flex-shrink-0">
+              {/* Mobile: score pill only. Desktop: score + status text */}
+              <div className="flex items-center gap-2 flex-shrink-0">
                 <ScorePill score={job.score} />
-                <StatusBadge status={job.status} />
+                <span className="hidden sm:flex">
+                  <StatusBadge status={job.status} />
+                </span>
+                {/* Mobile: just a colored dot for status */}
+                <span className={`sm:hidden w-2 h-2 rounded-full flex-shrink-0 ${
+                  job.status === 'Authentic' ? 'bg-brand-green' :
+                  job.status === 'Manipulated' ? 'bg-brand-red' : 'bg-slate-500'
+                }`} />
               </div>
             </div>
           ))}
